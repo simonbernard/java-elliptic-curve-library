@@ -2,12 +2,31 @@ package de.rub.nds.ec;
 
 import de.rub.nds.ec.math.*;
 
+import org.bouncycastle.math.ec.custom.sec.SecP192K1Curve;
+import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.math.ec.ECFieldElement;
+import org.bouncycastle.math.ec.ECPoint;
+
+import java.math.BigInteger;
+
 public class Example {
 
     public static void main(String[] args) {
-        FiniteField field = new FiniteField("00db7c2abf62e35e668076bead208b");
-        FiniteField.EllipticCurve curve = field.new EllipticCurve("00db7c2abf62e35e668076bead2088", "659ef8ba043916eede8911702b22");
+        // curves
+        FiniteField field = new FiniteField("00fffffffffffffffffffffffffffffffffffffffeffffee37");
+        FiniteField.EllipticCurve sbCurve = field.new EllipticCurve("0", "3");
+        System.out.println("SB CURVE: " + sbCurve.toString());
+        SecP192K1Curve bcCurve = new SecP192K1Curve();
+        System.out.format("BC CURVE: Y^2 = X^3 + %s * X + %s;", bcCurve.getA(), bcCurve.getB());
 
+        // generator
+        ECKeyPairGenerator bcKeyGenerator = new ECKeyPairGenerator();
+        bcKeyGenerator.
+
+
+
+
+        /*
         FiniteField.EllipticCurve.Point G = curve.new Point("09487239995a5ee76b55f9c2f098", "a89ce5af8724c0a23e0e0ff77500");
         FiniteField.FieldElement privateKey = field.new FieldElement();
         FiniteField.EllipticCurve.Point publicKey = G.multiply(privateKey);
@@ -19,7 +38,7 @@ public class Example {
         boolean valid = ecdsa.verifySignature(publicKey, message, signature);
         System.out.println("Private key: " + privateKey.toString());
         System.out.println("Public key: " + publicKey.toString());
-        System.out.format("Signature verification successful? %s", valid);
+        System.out.format("Signature verification successful? %s", valid);*/
     }
 
 }
