@@ -11,6 +11,7 @@ package de.rub.nds.ec;
 
 
 
+import de.rub.nds.ec.math.EllipticCurve;
 import de.rub.nds.ec.math.FiniteField;
 
 
@@ -51,18 +52,18 @@ public class ECDSA {
     /**
      * Holds the curve on which we operate.
      */    
-    private FiniteField.EllipticCurve E;
+    private EllipticCurve E;
     
     /**
      * Holds the domain parameter P.
      */    
-    private FiniteField.EllipticCurve.Point P;
+    private EllipticCurve.Point P;
     
     /**
      * Precomputed points which are used for point
      * multiplication.
      */
-    private FiniteField.EllipticCurve.Point[] nafPoints;
+    private EllipticCurve.Point[] nafPoints;
     
     /**
      * Initialize the ECDSA Signer with the field, the elliptic curve
@@ -71,14 +72,11 @@ public class ECDSA {
      * @param E The elliptic curve
      * @param P The domain parameter P
      */
-    public ECDSA( FiniteField F, FiniteField.EllipticCurve E,
-            FiniteField.EllipticCurve.Point P ) {
-        
+    public ECDSA( FiniteField F, EllipticCurve E, EllipticCurve.Point P ) {
         this.F = F;
         this.E = E;
         this.P = P;
         this.nafPoints = P.precomputeNAFPoints( (byte)6 );
-        
     }
     
     /**
@@ -89,29 +87,27 @@ public class ECDSA {
      * @param   privateKey a <tt>FieldElement</tt> holding the private key.
      * @return  the signature for the given message.
      */
-    public FiniteField.FieldElement[] generateSignature( 
-            FiniteField.FieldElement message,
-            FiniteField.FieldElement privateKey ) {
-        
-        FiniteField.FieldElement[] result = new FiniteField.FieldElement[2];
-        result[0] = null;
-        result[1] = null;
-        
-        FiniteField.EllipticCurve.Point R = null;
+    public Signature generateSignature(FiniteField.FieldElement message, FiniteField.FieldElement privateKey) {
+
+        FiniteField.FieldElement r;
+        FiniteField.FieldElement s;
+        FiniteField.FieldElement k;
+
+        EllipticCurve.Point R;
         
         do {
-            FiniteField.FieldElement k = F.new FieldElement( );
+            k = F.new FieldElement( );
             
             do {
                 R = P.multiply( k, nafPoints, (byte)6 );
-                result[0] = R.getX( );
-            } while( result[0].compareTo( F.new FieldElement( "0" ) ) == FiniteField.EQ );
+                r = R.getX( );
+            } while( r.compareTo( F.ZERO ) == FiniteField.EQ );
+
+            s = k.invert( ).multiply( message.add( privateKey.multiply( r ) ) );
             
-            result[1] = k.invert( ).multiply( message.add( privateKey.multiply( result[0] ) ) );
-            
-        } while( result[1].compareTo( F.new FieldElement( "0" ) ) == FiniteField.EQ );
-        
-        return result;
+        } while( s.compareTo( F.new FieldElement( "0" ) ) == FiniteField.EQ );
+
+        return new Signature(r, s, k);
         
     }
     
@@ -122,23 +118,21 @@ public class ECDSA {
      * @param message   the message to verify the signature for.
      * @param signature the signature to verify
      *
-     * @return  <tt>true</tt> if and only if <tt>signature</tt> is a valid
+     * @return  <tt>true</tt> if <tt>signature</tt> is a valid
      *          signature for <tt>message</tt> in the given domain.
      */
-    public boolean verifySignature( FiniteField.EllipticCurve.Point Q,
-            FiniteField.FieldElement message,
-            FiniteField.FieldElement[] signature ) {
+    public boolean verifySignature(EllipticCurve.Point Q, FiniteField.FieldElement message, Signature signature) {
         
-        FiniteField.FieldElement w = signature[1].invert( );
+        FiniteField.FieldElement w = signature.getS().invert( );
         FiniteField.FieldElement u1 = message.multiply( w );
-        FiniteField.FieldElement u2 = signature[0].multiply( w );
+        FiniteField.FieldElement u2 = signature.getR().multiply( w );
         
-        FiniteField.EllipticCurve.Point X = P.multiply( u1, nafPoints, (byte)6 ).add( Q.multiply( u2 ) );
-        
+        EllipticCurve.Point X = P.multiply( u1, nafPoints, (byte)6 ).add( Q.multiply( u2 ) );
+
         if( X.isInfinity() )
             return false;
         
-        if( X.getX().compareTo( signature[0] ) == FiniteField.EQ )
+        if( X.getX().compareTo( signature.getR() ) == FiniteField.EQ )
             return true;
         
         return false;

@@ -107,14 +107,14 @@ package de.rub.nds.ec;
  * </code>
  */
 public class ChallengeCurves {
-    
+
     /**
      * You don't need to create an object of this class.
      */
     private ChallengeCurves( ) {
-        
+
     }
-    
+
     /**
      * The bit size of each of the curves underlying field.
      */
